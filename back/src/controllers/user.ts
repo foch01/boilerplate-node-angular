@@ -495,5 +495,6 @@ export const apiPostLogin = (req: Request, res: Response, next: NextFunction) =>
 };
 
 export const apiGetProfile = (req: Request, res: Response, next: NextFunction) => {
-    res.json('Je visualise mon profile');
+    console.log(req.user);
+    res.json(req.user);
 };

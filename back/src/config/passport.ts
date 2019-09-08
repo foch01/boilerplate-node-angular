@@ -150,7 +150,7 @@ passport.use(new JWTStrategy({
     function (jwtPayload: any, cb: any) {
         console.log('JE SUIS LA', jwtPayload);
         //find the user in db if needed. This functionality may be omitted if you store everything you'll need in JWT payload.
-        return User.find({email: jwtPayload.id})
+        return User.findOne({email: jwtPayload.id})
             .then(user => {
                 return cb(null, user);
             })

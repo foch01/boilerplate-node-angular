@@ -10,4 +10,11 @@
       .register-are {
         margin-bottom: 8px;
       }
-    
+
+      .register {
+        height: 100vh;
+      }
+
+      form {
+        width: 100%;
+      }

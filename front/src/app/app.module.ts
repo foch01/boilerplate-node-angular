@@ -14,8 +14,9 @@ import fr from '@angular/common/locales/fr';
 import { LoginComponent } from './auth/login/login.component';
 import { ProfileComponent } from './profile/profile.component';
 import { RegisterComponent } from './auth/register/register.component';
-import {AuthenticationService} from './shared/auth/authentication.service';
-import {AuthGuardService} from './shared/guards/auth-guard.service';
+import { AuthenticationService } from './shared/auth/authentication.service';
+import { AuthGuardService } from './shared/guards/auth-guard.service';
+import { SideMenuComponent } from './components/side-menu/side-menu.component';
 
 registerLocaleData(en);
 
@@ -25,6 +26,7 @@ registerLocaleData(en);
     LoginComponent,
     ProfileComponent,
     RegisterComponent,
+    SideMenuComponent,
   ],
   imports: [
     BrowserModule,
