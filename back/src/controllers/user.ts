@@ -2,12 +2,13 @@ import async from "async";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import passport from "passport";
-import { User, UserDocument, AuthToken } from "../models/User";
-import { Request, Response, NextFunction } from "express";
-import { IVerifyOptions } from "passport-local";
-import { WriteError } from "mongodb";
-import { check, sanitize, validationResult } from "express-validator";
+import {User, UserDocument, AuthToken} from "../models/User";
+import {Request, Response, NextFunction} from "express";
+import {IVerifyOptions} from "passport-local";
+import {WriteError} from "mongodb";
+import {check, sanitize, validationResult} from "express-validator";
 import "../config/passport";
+const jwt = require('jsonwebtoken');
 
 /**
  * GET /login
@@ -30,7 +31,7 @@ export const postLogin = (req: Request, res: Response, next: NextFunction) => {
     check("email", "Email is not valid").isEmail();
     check("password", "Password cannot be blank").isLength({min: 1});
     // eslint-disable-next-line @typescript-eslint/camelcase
-    sanitize("email").normalizeEmail({ gmail_remove_dots: false });
+    sanitize("email").normalizeEmail({gmail_remove_dots: false});
 
     const errors = validationResult(req);
 
@@ -40,14 +41,18 @@ export const postLogin = (req: Request, res: Response, next: NextFunction) => {
     }
 
     passport.authenticate("local", (err: Error, user: UserDocument, info: IVerifyOptions) => {
-        if (err) { return next(err); }
+        if (err) {
+            return next(err);
+        }
         if (!user) {
             req.flash("errors", {msg: info.message});
             return res.redirect("/login");
         }
         req.logIn(user, (err) => {
-            if (err) { return next(err); }
-            req.flash("success", { msg: "Success! You are logged in." });
+            if (err) {
+                return next(err);
+            }
+            req.flash("success", {msg: "Success! You are logged in."});
             res.redirect(req.session.returnTo || "/");
         });
     })(req, res, next);
@@ -81,10 +86,10 @@ export const getSignup = (req: Request, res: Response) => {
  */
 export const postSignup = (req: Request, res: Response, next: NextFunction) => {
     check("email", "Email is not valid").isEmail();
-    check("password", "Password must be at least 4 characters long").isLength({ min: 4 });
+    check("password", "Password must be at least 4 characters long").isLength({min: 4});
     check("confirmPassword", "Passwords do not match").equals(req.body.password);
     // eslint-disable-next-line @typescript-eslint/camelcase
-    sanitize("email").normalizeEmail({ gmail_remove_dots: false });
+    sanitize("email").normalizeEmail({gmail_remove_dots: false});
 
     const errors = validationResult(req);
 
@@ -98,14 +103,18 @@ export const postSignup = (req: Request, res: Response, next: NextFunction) => {
         password: req.body.password
     });
 
-    User.findOne({ email: req.body.email }, (err, existingUser) => {
-        if (err) { return next(err); }
+    User.findOne({email: req.body.email}, (err, existingUser) => {
+        if (err) {
+            return next(err);
+        }
         if (existingUser) {
-            req.flash("errors", { msg: "Account with that email address already exists." });
+            req.flash("errors", {msg: "Account with that email address already exists."});
             return res.redirect("/signup");
         }
         user.save((err) => {
-            if (err) { return next(err); }
+            if (err) {
+                return next(err);
+            }
             req.logIn(user, (err) => {
                 if (err) {
                     return next(err);
@@ -133,7 +142,7 @@ export const getAccount = (req: Request, res: Response) => {
 export const postUpdateProfile = (req: Request, res: Response, next: NextFunction) => {
     check("email", "Please enter a valid email address.").isEmail();
     // eslint-disable-next-line @typescript-eslint/camelcase
-    sanitize("email").normalizeEmail({ gmail_remove_dots: false });
+    sanitize("email").normalizeEmail({gmail_remove_dots: false});
 
     const errors = validationResult(req);
 
@@ -143,7 +152,9 @@ export const postUpdateProfile = (req: Request, res: Response, next: NextFunctio
     }
 
     User.findById(req.user.id, (err, user: UserDocument) => {
-        if (err) { return next(err); }
+        if (err) {
+            return next(err);
+        }
         user.email = req.body.email || "";
         user.profile.name = req.body.name || "";
         user.profile.gender = req.body.gender || "";
@@ -152,12 +163,12 @@ export const postUpdateProfile = (req: Request, res: Response, next: NextFunctio
         user.save((err: WriteError) => {
             if (err) {
                 if (err.code === 11000) {
-                    req.flash("errors", { msg: "The email address you have entered is already associated with an account." });
+                    req.flash("errors", {msg: "The email address you have entered is already associated with an account."});
                     return res.redirect("/account");
                 }
                 return next(err);
             }
-            req.flash("success", { msg: "Profile information has been updated." });
+            req.flash("success", {msg: "Profile information has been updated."});
             res.redirect("/account");
         });
     });
@@ -168,7 +179,7 @@ export const postUpdateProfile = (req: Request, res: Response, next: NextFunctio
  * Update current password.
  */
 export const postUpdatePassword = (req: Request, res: Response, next: NextFunction) => {
-    check("password", "Password must be at least 4 characters long").isLength({ min: 4 });
+    check("password", "Password must be at least 4 characters long").isLength({min: 4});
     check("confirmPassword", "Passwords do not match").equals(req.body.password);
 
     const errors = validationResult(req);
@@ -179,11 +190,15 @@ export const postUpdatePassword = (req: Request, res: Response, next: NextFuncti
     }
 
     User.findById(req.user.id, (err, user: UserDocument) => {
-        if (err) { return next(err); }
+        if (err) {
+            return next(err);
+        }
         user.password = req.body.password;
         user.save((err: WriteError) => {
-            if (err) { return next(err); }
-            req.flash("success", { msg: "Password has been changed." });
+            if (err) {
+                return next(err);
+            }
+            req.flash("success", {msg: "Password has been changed."});
             res.redirect("/account");
         });
     });
@@ -194,10 +209,12 @@ export const postUpdatePassword = (req: Request, res: Response, next: NextFuncti
  * Delete user account.
  */
 export const postDeleteAccount = (req: Request, res: Response, next: NextFunction) => {
-    User.remove({ _id: req.user.id }, (err) => {
-        if (err) { return next(err); }
+    User.remove({_id: req.user.id}, (err) => {
+        if (err) {
+            return next(err);
+        }
         req.logout();
-        req.flash("info", { msg: "Your account has been deleted." });
+        req.flash("info", {msg: "Your account has been deleted."});
         res.redirect("/");
     });
 };
@@ -209,12 +226,16 @@ export const postDeleteAccount = (req: Request, res: Response, next: NextFunctio
 export const getOauthUnlink = (req: Request, res: Response, next: NextFunction) => {
     const provider = req.params.provider;
     User.findById(req.user.id, (err, user: any) => {
-        if (err) { return next(err); }
+        if (err) {
+            return next(err);
+        }
         user[provider] = undefined;
         user.tokens = user.tokens.filter((token: AuthToken) => token.kind !== provider);
         user.save((err: WriteError) => {
-            if (err) { return next(err); }
-            req.flash("info", { msg: `${provider} account has been unlinked.` });
+            if (err) {
+                return next(err);
+            }
+            req.flash("info", {msg: `${provider} account has been unlinked.`});
             res.redirect("/account");
         });
     });
@@ -229,12 +250,14 @@ export const getReset = (req: Request, res: Response, next: NextFunction) => {
         return res.redirect("/");
     }
     User
-        .findOne({ passwordResetToken: req.params.token })
+        .findOne({passwordResetToken: req.params.token})
         .where("passwordResetExpires").gt(Date.now())
         .exec((err, user) => {
-            if (err) { return next(err); }
+            if (err) {
+                return next(err);
+            }
             if (!user) {
-                req.flash("errors", { msg: "Password reset token is invalid or has expired." });
+                req.flash("errors", {msg: "Password reset token is invalid or has expired."});
                 return res.redirect("/forgot");
             }
             res.render("account/reset", {
@@ -248,7 +271,7 @@ export const getReset = (req: Request, res: Response, next: NextFunction) => {
  * Process the reset password request.
  */
 export const postReset = (req: Request, res: Response, next: NextFunction) => {
-    check("password", "Password must be at least 4 characters long.").isLength({ min: 4 });
+    check("password", "Password must be at least 4 characters long.").isLength({min: 4});
     check("confirm", "Passwords must match.").equals(req.body.password);
 
     const errors = validationResult(req);
@@ -261,19 +284,23 @@ export const postReset = (req: Request, res: Response, next: NextFunction) => {
     async.waterfall([
         function resetPassword(done: Function) {
             User
-                .findOne({ passwordResetToken: req.params.token })
+                .findOne({passwordResetToken: req.params.token})
                 .where("passwordResetExpires").gt(Date.now())
                 .exec((err, user: any) => {
-                    if (err) { return next(err); }
+                    if (err) {
+                        return next(err);
+                    }
                     if (!user) {
-                        req.flash("errors", { msg: "Password reset token is invalid or has expired." });
+                        req.flash("errors", {msg: "Password reset token is invalid or has expired."});
                         return res.redirect("back");
                     }
                     user.password = req.body.password;
                     user.passwordResetToken = undefined;
                     user.passwordResetExpires = undefined;
                     user.save((err: WriteError) => {
-                        if (err) { return next(err); }
+                        if (err) {
+                            return next(err);
+                        }
                         req.logIn(user, (err) => {
                             done(err, user);
                         });
@@ -295,12 +322,14 @@ export const postReset = (req: Request, res: Response, next: NextFunction) => {
                 text: `Hello,\n\nThis is a confirmation that the password for your account ${user.email} has just been changed.\n`
             };
             transporter.sendMail(mailOptions, (err) => {
-                req.flash("success", { msg: "Success! Your password has been changed." });
+                req.flash("success", {msg: "Success! Your password has been changed."});
                 done(err);
             });
         }
     ], (err) => {
-        if (err) { return next(err); }
+        if (err) {
+            return next(err);
+        }
         res.redirect("/");
     });
 };
@@ -325,7 +354,7 @@ export const getForgot = (req: Request, res: Response) => {
 export const postForgot = (req: Request, res: Response, next: NextFunction) => {
     check("email", "Please enter a valid email address.").isEmail();
     // eslint-disable-next-line @typescript-eslint/camelcase
-    sanitize("email").normalizeEmail({ gmail_remove_dots: false });
+    sanitize("email").normalizeEmail({gmail_remove_dots: false});
 
     const errors = validationResult(req);
 
@@ -342,10 +371,12 @@ export const postForgot = (req: Request, res: Response, next: NextFunction) => {
             });
         },
         function setRandomToken(token: AuthToken, done: Function) {
-            User.findOne({ email: req.body.email }, (err, user: any) => {
-                if (err) { return done(err); }
+            User.findOne({email: req.body.email}, (err, user: any) => {
+                if (err) {
+                    return done(err);
+                }
                 if (!user) {
-                    req.flash("errors", { msg: "Account with that email address does not exist." });
+                    req.flash("errors", {msg: "Account with that email address does not exist."});
                     return res.redirect("/forgot");
                 }
                 user.passwordResetToken = token;
@@ -373,12 +404,96 @@ export const postForgot = (req: Request, res: Response, next: NextFunction) => {
           If you did not request this, please ignore this email and your password will remain unchanged.\n`
             };
             transporter.sendMail(mailOptions, (err) => {
-                req.flash("info", { msg: `An e-mail has been sent to ${user.email} with further instructions.` });
+                req.flash("info", {msg: `An e-mail has been sent to ${user.email} with further instructions.`});
                 done(err);
             });
         }
     ], (err) => {
-        if (err) { return next(err); }
+        if (err) {
+            return next(err);
+        }
         res.redirect("/forgot");
     });
+};
+
+export const apiPostRegister = (req: Request, res: Response, next: NextFunction) => {
+    check("email", "Email is not valid").isEmail();
+    check("password", "Password must be at least 4 characters long").isLength({min: 4});
+    check("confirmPassword", "Passwords do not match").equals(req.body.password);
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    sanitize("email").normalizeEmail({gmail_remove_dots: false});
+
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+        req.flash("errors", errors.array());
+        return res.redirect("/signup");
+    }
+
+    const user = new User({
+        email: req.body.email,
+        password: req.body.password
+    });
+
+    User.findOne({email: req.body.email}, (err, existingUser) => {
+        if (err) {
+            return next(err);
+        }
+        if (existingUser) {
+            req.flash("errors", {msg: "Account with that email address already exists."});
+            return res.redirect("/signup");
+        }
+        user.save((err) => {
+            if (err) {
+                return next(err);
+            }
+            req.logIn(user, (err) => {
+                if (err) {
+                    return next(err);
+                }
+                const token = jwt.sign({ id: user.email }, process.env.JWT_SECRET);
+                res.status(200);
+                res.json({token: token});
+            });
+        });
+    });
+};
+
+
+export const apiPostLogin = (req: Request, res: Response, next: NextFunction) => {
+    check("email", "Email is not valid").isEmail();
+    check("password", "Password cannot be blank").isLength({min: 1});
+    console.log(req.body);
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    sanitize("email").normalizeEmail({gmail_remove_dots: false});
+
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+        req.flash("errors", errors.array());
+        return res.redirect("/login");
+    }
+
+    passport.authenticate("local", (err: Error, user: UserDocument, info: IVerifyOptions) => {
+        console.log(user, info);
+        if (err) {
+            return next(err);
+        }
+        if (!user) {
+            req.flash("errors", {msg: info.message});
+            return res.redirect("/login");
+        }
+        req.logIn(user, (err) => {
+            if (err) {
+                return next(err);
+            }
+            const token = jwt.sign({ id: user.email }, process.env.JWT_SECRET);
+            res.json({token: token});
+
+        });
+    })(req, res, next);
+};
+
+export const apiGetProfile = (req: Request, res: Response, next: NextFunction) => {
+    res.json('Je visualise mon profile');
 };

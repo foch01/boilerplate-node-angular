@@ -26,11 +26,13 @@ import * as passportConfig from "./config/passport";
 // Create Express server
 const app = express();
 
+const cors = require('cors');
+app.use(cors());
 // Connect to MongoDB
 const mongoUrl = MONGODB_URI;
 mongoose.Promise = bluebird;
 
-mongoose.connect(mongoUrl, { useNewUrlParser: true} ).then(
+mongoose.connect(mongoUrl, { useNewUrlParser: true, useCreateIndex: true},  ).then(
     () => { /** ready to use. The `mongoose.connect()` promise resolves to undefined. */ },
 ).catch(err => {
     console.log("MongoDB connection error. Please make sure MongoDB is running. " + err);
@@ -80,11 +82,16 @@ app.use((req, res, next) => {
 app.use(
     express.static(path.join(__dirname, "public"), { maxAge: 31557600000 })
 );
-
+const secureRoute = require('./routes/secure-routes');
 /**
  * Primary app routes.
  */
 app.get("/", homeController.index);
+/*TEST AUTHENT */
+app.post("/api/register", userController.apiPostRegister);
+app.post("/api/login", userController.apiPostLogin);
+app.get("/api/profile", passport.authenticate('jwt', { session : false }), userController.apiGetProfile);
+/*FIN TEST AUTHENT */
 app.get("/login", userController.getLogin);
 app.post("/login", userController.postLogin);
 app.get("/logout", userController.logout);
